@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculation Tools</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Basic Reset */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+
+        /* Container styles */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Header styles */
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Card styles */
+        .card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin: 15px;
+            padding: 20px;
+            transition: box-shadow 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Links styles */
+        .card a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+
+        /* Responsive grid for cards */
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .card {
+            flex: 1 1 calc(25% - 30px); /* Responsive flex item for 4 cards per row */
+            min-width: 250px; /* Minimum width for cards */
+        }
+
+        /* Media Queries for responsiveness */
+        @media (max-width: 768px) {
+            .card {
+                flex: 1 1 calc(50% - 30px); /* 2 cards per row on smaller screens */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                flex: 1 1 100%; /* 1 card per row on very small screens */
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Userful Calculation Tools</h1>
+        <div class="card-container">
+            <div class="card">
+                <a href="http://kanudo3101.pythonanywhere.com/" target="_blank"><h2>Result Analysis</h2></a>
+                <p>GTU Result Analysis from CSV (Try 2-3 Times to Proper Load Website)</p>
+            </div>
+            <div class="card">
+                <a href="https://docs.google.com/spreadsheets/d/1r4tFLPmzEUXIcMf7yAP35qjUf9vm02Df-fHfECpPZUs/edit?usp=sharing" target="_blank"><h2>Load Calculation (Excel)</h2></a>
+                <p>Load Calculation using Google Spreadsheet</p>
+            </div>
+            <div class="card">
+                <a href="\Load_Calculation\index.html" target="_blank"><h2>Load Calculation (html)</h2></a>
+                <p>Load Calculation of Full Time-Table</p>
+            </div>
+		</div>
+	</div>
+</body>
+</html>
