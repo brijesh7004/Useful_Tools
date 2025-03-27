@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.text())
         .then(csv => {
             const lines = csv.split('\n');
+			console.log(lines);
             holidays = lines
                 .filter(line => line.trim()) // Skip empty lines
                 .map(line => {
@@ -39,7 +40,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function isHoliday(date) {
         return holidays.find(h => 
             h.day === date.getDate() && 
-            h.month === date.getMonth()
+            h.month === date.getMonth()  && 
+			h.year == date.getYear()
         );
     }
 
@@ -66,14 +68,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         vacationHours++;
                     } else {
                         // If not a vacation day, count it as a working day
-                        totalHours++;
-                        
                         // Then check if it's a holiday
                         const holiday = isHoliday(current);
                         if (holiday) {
                             holidayHours++;
                             holidayDates.add(`${current.toISOString().split('T')[0]}: ${holiday.name}`);
                         }
+						else{
+							totalHours++;
+						}
                     }
                 }
             }
