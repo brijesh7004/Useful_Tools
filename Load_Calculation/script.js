@@ -14,12 +14,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastSummaryData = null;
     let holidays = [];
 
+    let totalDays=0, totalVacDays=0, totalHoliDays=0;
+
     // Load holidays from CSV file
     fetch('holidays.csv')
         .then(response => response.text())
         .then(csv => {
             const lines = csv.split('\n');
-			console.log(lines);
             holidays = lines
                 .filter(line => line.trim()) // Skip empty lines
                 .map(line => {
@@ -38,13 +39,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Helper function to check if a date is a holiday
     function isHoliday(date) {
-        return holidays.find(h => 
-            h.day === date.getDate() && 
-            h.month === date.getMonth()  && 
-			h.year == date.getYear()
+        data= holidays.find(h => 
+            // h.day === date.getDate() && 
+            // h.month === date.getMonth()
+            //h.date = date
+            h.date.toISOString().split('T')[0] == date.toISOString().split('T')[0]
         );
+        return data;
+
+        // for (const holiday of holidays) {
+        //     if (holiday.date.toISOString().split('T')[0] == date.toISOString().split('T')[0]) {
+        //         return true; // Date found
+        //     }
+        // }
+        // return false; 
     }
 
+    function isSecondOrFourthSaturday(currentDate) {
+        // Get the month and year
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const day = currentDate.getDate();
+        const weekNumber = Math.ceil(day / 7); // Calculate week number in the month
+    
+        // Initialize an array to store the dates of Saturdays
+        const saturdays = [];
+    
+        // Loop through all days in the month to find Saturdays
+        const lastDateOfMonth = new Date(year, month + 1, 0).getDate();
+        for (let d = 1; d <= lastDateOfMonth; d++) {
+            const checkDate = new Date(year, month, d);
+            if (checkDate.getDay() === 6) { // 6 corresponds to Saturday
+                saturdays.push(d);
+            }
+        }
+    
+        // Check if the current date is the 2nd or 4th Saturday
+        const isSecondSaturday = saturdays[1] === day; // 2nd Saturday (index 1)
+        const isFourthSaturday = saturdays[3] === day; // 4th Saturday (index 3)
+        return isSecondSaturday||isFourthSaturday;
+    }
+    
     // Helper function to count hours for specific days
     function countHoursForDays(startDate, endDate, selectedDays, vacationStart, vacationEnd) {
         const start = new Date(startDate);
@@ -56,27 +91,33 @@ document.addEventListener('DOMContentLoaded', function() {
         let vacationHours = 0;
         let holidayHours = 0;
         let holidayDates = new Set();
+
+        totalDays=0; totalVacDays=0; totalHoliDays=0;
         
         let current = new Date(start);
+        current.setHours(0,0,0,0);
         while (current <= end) {
             // Check if this day is in our selected days (0 = Sunday, 6 = Saturday)
             if (selectedDays.includes(current.getDay())) {
                 // Don't count Sundays
-                if (current.getDay() !== 0) {
+                if (current.getDay() !== 0 && !isSecondOrFourthSaturday(current)) {
+                    totalDays++;
+
                     // First, check if it's a vacation day
-                    if (vacStart && vacEnd && current >= vacStart && current <= vacEnd) {
+                    if (current >= vacStart && current <= vacEnd) {
                         vacationHours++;
+                        totalVacDays++;
                     } else {
                         // If not a vacation day, count it as a working day
+                        totalHours++;
+
                         // Then check if it's a holiday
                         const holiday = isHoliday(current);
-                        if (holiday) {
+                        if (holiday) {  
                             holidayHours++;
+                            totalHoliDays++;
                             holidayDates.add(`${current.toISOString().split('T')[0]}: ${holiday.name}`);
                         }
-						else{
-							totalHours++;
-						}
                     }
                 }
             }
@@ -176,10 +217,10 @@ document.addEventListener('DOMContentLoaded', function() {
             data: Object.keys(subjectData).length > 0 ? subjectData : null,
             holidays: Array.from(allHolidays),
             daysInfo: {
-                totalDays: totalInfo.totalHours,
-                vacationDays: totalInfo.vacationHours,
-                holidayDays: totalInfo.holidayHours,
-                workingDays: totalInfo.totalHours - totalInfo.holidayHours
+                totalDays: totalDays, //totalInfo.totalHours,
+                vacationDays: totalVacDays, //totalInfo.vacationHours,
+                holidayDays: totalHoliDays, //totalInfo.holidayHours,
+                workingDays: totalDays-totalVacDays-totalHoliDays, //totalInfo.totalHours - totalInfo.holidayHours
             }
         };
     }
@@ -236,10 +277,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${result.holidays.map(holiday => `<li>${holiday}</li>`).join('')}
             </ul>
             <div class="days-info">
-                <p>Total Working Days: ${result.daysInfo.totalDays}</p>
+                <p>Total Days: ${result.daysInfo.totalDays}</p>
                 <p>Vacation Days: ${result.daysInfo.vacationDays}</p>
-                <p>Net Working Days (excluding vacations): ${result.daysInfo.workingDays}</p>
-                <p>Net Working Days (excluding vacations and holidays): ${result.daysInfo.workingDays - result.holidays.length}</p>
+                <p>Net Working Days (excluding vacations): ${result.daysInfo.workingDays+result.daysInfo.holidayDays}</p>
+                <p>Net Working Days (excluding vacations and holidays): ${result.daysInfo.workingDays}</p>
             </div>
         `;
 
@@ -541,8 +582,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Event Listeners
     clearButton.addEventListener('click', function() {
-        const selects = document.querySelectorAll('.schedule-select');
-        selects.forEach(select => select.value = '');
+        // Clear subject selections in the schedule
+        const selects = document.querySelectorAll('select[data-slot][data-day]');
+        selects.forEach(select => {
+            select.value = ''; // Clear the selected subject
+        });
+
+        // Clear lab radio buttons
+        const labRadios = document.querySelectorAll('.lab-radio');
+        labRadios.forEach(radio => {
+            radio.checked = false; // Uncheck all lab radios
+        });
+
         summaryContainer.innerHTML = '';
         downloadButton.disabled = true;
         lastSummaryData = null;
