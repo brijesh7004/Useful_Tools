@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastSummaryData = null;
     let holidays = [];
 
-    let totalDays=0, totalVacDays=0, totalHoliDays=0;
+    let totalDays=0, totalWorkingDays=0, totalVacDays=0, totalHoliDays=0;
+    const oneDayInMillis = 24 * 60 * 60 * 1000;
+    const indianGMSInMillis = 5.5 * 60 * 60 * 1000;
 
     // Load holidays from CSV file
     fetch('holidays.csv')
@@ -42,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function() {
         data= holidays.find(h => 
             // h.day === date.getDate() && 
             // h.month === date.getMonth()
-            //h.date = date
+            //h.date = date            
             h.date.toISOString().split('T')[0] == date.toISOString().split('T')[0]
         );
         return data;
@@ -82,42 +84,39 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Helper function to count hours for specific days
     function countHoursForDays(startDate, endDate, selectedDays, vacationStart, vacationEnd) {
-        const start = new Date(startDate);
-        const end = new Date(endDate);
+        const start = new Date(startDate);  start.setHours(0,0,0,0);
+        const end = new Date(endDate);      end.setHours(0,0,0,0);
         const vacStart = vacationStart ? new Date(vacationStart) : null;
         const vacEnd = vacationEnd ? new Date(vacationEnd) : null;
+        if(vacStart!=null){ vacStart.setHours(0,0,0,0);    vacEnd.setHours(0,0,0,0);}
 
         let totalHours = 0;
         let vacationHours = 0;
         let holidayHours = 0;
         let holidayDates = new Set();
 
-        totalDays=0; totalVacDays=0; totalHoliDays=0;
+        totalDays=0; totalWorkingDays=0; totalVacDays=0; totalHoliDays=0;
         
         let current = new Date(start);
-        current.setHours(0,0,0,0);
         while (current <= end) {
             // Check if this day is in our selected days (0 = Sunday, 6 = Saturday)
-            if (selectedDays.includes(current.getDay())) {
+            if(current >= vacStart && current <= vacEnd){
+                vacationHours++;    totalVacDays++;
+            }
+            else if (selectedDays.includes(current.getDay())) {
+                totalDays++;
+
                 // Don't count Sundays
-                if (current.getDay() !== 0 && !isSecondOrFourthSaturday(current)) {
-                    totalDays++;
+                if (current.getDay() !== 0 && !isSecondOrFourthSaturday(current)) {                    
+                    // If not a vacation day, count it as a working day
+                    totalWorkingDays++; totalHours++;
 
-                    // First, check if it's a vacation day
-                    if (current >= vacStart && current <= vacEnd) {
-                        vacationHours++;
-                        totalVacDays++;
-                    } else {
-                        // If not a vacation day, count it as a working day
-                        totalHours++;
-
-                        // Then check if it's a holiday
-                        const holiday = isHoliday(current);
-                        if (holiday) {  
-                            holidayHours++;
-                            totalHoliDays++;
-                            holidayDates.add(`${current.toISOString().split('T')[0]}: ${holiday.name}`);
-                        }
+                    // Then check if it's a holiday
+                    const holiday = isHoliday(current);
+                    if (holiday) {
+                        date2 = new Date(holiday.date.getTime() + indianGMSInMillis);
+                        holidayHours++; totalHoliDays++;
+                        holidayDates.add(`${date2.toISOString().split('T')[0]}: ${holiday.name}`);
                     }
                 }
             }
@@ -215,12 +214,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return {
             data: Object.keys(subjectData).length > 0 ? subjectData : null,
-            holidays: Array.from(allHolidays),
+            holidays: Array.from(totalInfo.holidays),
             daysInfo: {
                 totalDays: totalDays, //totalInfo.totalHours,
                 vacationDays: totalVacDays, //totalInfo.vacationHours,
                 holidayDays: totalHoliDays, //totalInfo.holidayHours,
-                workingDays: totalDays-totalVacDays-totalHoliDays, //totalInfo.totalHours - totalInfo.holidayHours
+                workingDays: totalWorkingDays, //totalInfo.totalHours - totalInfo.holidayHours
             }
         };
     }
@@ -277,10 +276,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 ${result.holidays.map(holiday => `<li>${holiday}</li>`).join('')}
             </ul>
             <div class="days-info">
-                <p>Total Days: ${result.daysInfo.totalDays}</p>
+                <p>Total Week: ${result.daysInfo.totalDays/6}</p>
                 <p>Vacation Days: ${result.daysInfo.vacationDays}</p>
-                <p>Net Working Days (excluding vacations): ${result.daysInfo.workingDays+result.daysInfo.holidayDays}</p>
-                <p>Net Working Days (excluding vacations and holidays): ${result.daysInfo.workingDays}</p>
+                <p>Net Working Days (excluding vacations): ${result.daysInfo.workingDays}</p>
+                <p>Net Working Days (excluding vacations and holidays): ${result.daysInfo.workingDays-result.daysInfo.holidayDays}</p>
             </div>
         `;
 
@@ -329,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Add days information
         rows.push([]);
         rows.push(['Summary Information']);
-        rows.push(['Total Working Days', data.daysInfo.totalDays]);
+        rows.push(['Total Weeks', data.daysInfo.totalDays/6]);
         rows.push(['Vacation Days', data.daysInfo.vacationDays]);
         rows.push(['Net Working Days (excluding vacations)', data.daysInfo.workingDays]);
         rows.push(['Net Working Days (excluding vacations and holidays)', data.daysInfo.workingDays - data.holidays.length]);
